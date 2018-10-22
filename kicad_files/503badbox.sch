@@ -1,0 +1,205 @@
+EESchema Schematic File Version 2
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:ESP8266
+LIBS:roe-1205s
+LIBS:wemos_mini
+LIBS:503badbox-cache
+EELAYER 25 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L ROE-1205S U2
+U 1 1 5BCE189D
+P 6500 1600
+F 0 "U2" H 6500 2000 60  0000 C CNN
+F 1 "ROE-1205S" H 6500 1800 60  0000 C CNN
+F 2 "ROE-1205S:ROE-1205S" H 6500 1600 60  0001 C CNN
+F 3 "" H 6500 1600 60  0000 C CNN
+	1    6500 1600
+	1    0    0    -1  
+$EndComp
+$Comp
+L WeMos_mini U1
+U 1 1 5BCE1984
+P 3900 3450
+F 0 "U1" H 3900 3950 60  0000 C CNN
+F 1 "WeMos_mini" H 3900 2950 60  0000 C CNN
+F 2 "wemos_d1_mini:D1_mini_board" H 4450 2750 60  0001 C CNN
+F 3 "" H 4450 2750 60  0000 C CNN
+	1    3900 3450
+	1    0    0    -1  
+$EndComp
+$Comp
+L CONN_01X02 P1
+U 1 1 5BCE3D31
+P 2550 3350
+F 0 "P1" H 2550 3500 50  0000 C CNN
+F 1 "CONN_01X02" V 2650 3350 50  0000 C CNN
+F 2 "Connect:PINHEAD1-2" H 2550 3350 50  0000 C CNN
+F 3 "" H 2550 3350 50  0000 C CNN
+	1    2550 3350
+	-1   0    0    1   
+$EndComp
+$Comp
+L CONN_01X02 P2
+U 1 1 5BCE3DC6
+P 2550 3550
+F 0 "P2" H 2550 3700 50  0000 C CNN
+F 1 "CONN_01X02" V 2650 3550 50  0000 C CNN
+F 2 "Connect:PINHEAD1-2" H 2550 3550 50  0000 C CNN
+F 3 "" H 2550 3550 50  0000 C CNN
+	1    2550 3550
+	-1   0    0    1   
+$EndComp
+$Comp
+L CONN_01X02 P3
+U 1 1 5BCE3DF7
+P 4850 3350
+F 0 "P3" H 4850 3500 50  0000 C CNN
+F 1 "CONN_01X02" V 4950 3350 50  0000 C CNN
+F 2 "Connect:PINHEAD1-2" H 4850 3350 50  0000 C CNN
+F 3 "" H 4850 3350 50  0000 C CNN
+	1    4850 3350
+	1    0    0    -1  
+$EndComp
+$Comp
+L CONN_01X02 P4
+U 1 1 5BCE3E34
+P 4850 3550
+F 0 "P4" H 4850 3700 50  0000 C CNN
+F 1 "CONN_01X02" V 4950 3550 50  0000 C CNN
+F 2 "Connect:PINHEAD1-2" H 4850 3550 50  0000 C CNN
+F 3 "" H 4850 3550 50  0000 C CNN
+	1    4850 3550
+	1    0    0    -1  
+$EndComp
+$Comp
+L CONN_01X03 P5
+U 1 1 5BCE3E75
+P 4900 2050
+F 0 "P5" H 4900 2250 50  0000 C CNN
+F 1 "CONN_01X03" V 5000 2050 50  0000 C CNN
+F 2 "Connect:PINHEAD1-3" H 4900 2050 50  0000 C CNN
+F 3 "" H 4900 2050 50  0000 C CNN
+	1    4900 2050
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	6650 1950 6650 2500
+Wire Wire Line
+	6650 2500 3250 2500
+Wire Wire Line
+	3250 2500 3250 3100
+Wire Wire Line
+	3250 3100 3400 3100
+Wire Wire Line
+	6550 1950 6550 2450
+Wire Wire Line
+	6550 2450 3200 2450
+Wire Wire Line
+	3200 2450 3200 3200
+Wire Wire Line
+	3200 3200 3400 3200
+Wire Wire Line
+	6350 1950 6350 2100
+Wire Wire Line
+	6450 1950 6450 2150
+Wire Wire Line
+	6450 2150 7450 2150
+Wire Wire Line
+	6350 2100 7250 2100
+Wire Wire Line
+	7250 2100 7250 1950
+Wire Wire Line
+	7250 1950 7550 1950
+Wire Wire Line
+	7450 2150 7450 2050
+Wire Wire Line
+	7450 2050 7550 2050
+Wire Wire Line
+	5450 2500 5450 2150
+Wire Wire Line
+	5450 2150 5100 2150
+Connection ~ 5450 2500
+Wire Wire Line
+	5700 2050 5100 2050
+Wire Wire Line
+	3400 3300 2750 3300
+Wire Wire Line
+	2750 3400 3400 3400
+Wire Wire Line
+	3400 3500 2750 3500
+Wire Wire Line
+	3400 3600 2750 3600
+Wire Wire Line
+	4400 3300 4650 3300
+Wire Wire Line
+	4400 3400 4650 3400
+Wire Wire Line
+	4400 3500 4650 3500
+Wire Wire Line
+	4400 3600 4650 3600
+Wire Wire Line
+	4400 3200 4600 3200
+Wire Wire Line
+	4600 3200 4600 2850
+Wire Wire Line
+	4600 2850 5900 2850
+Wire Wire Line
+	5900 2850 5900 1950
+Wire Wire Line
+	5900 1950 5100 1950
+$Comp
+L CONN_01X02 P6
+U 1 1 5BCE466E
+P 7750 2000
+F 0 "P6" H 7750 2150 50  0000 C CNN
+F 1 "CONN_01X02" V 7850 2000 50  0000 C CNN
+F 2 "Connect:PINHEAD1-2" H 7750 2000 50  0000 C CNN
+F 3 "" H 7750 2000 50  0000 C CNN
+	1    7750 2000
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5700 2050 5700 2450
+Connection ~ 5700 2450
+$EndSCHEMATC
