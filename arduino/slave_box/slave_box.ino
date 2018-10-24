@@ -1,27 +1,30 @@
 class Input{
   int inPin;
   bool oldpin;
+  long debounce;
 
-  public: Input(int pin){
-    inPin = pin;
-    pinMode(inPin, INPUT);
-    oldpin = digitalRead(inPin);
-    Serial.print("INIT pin ");
-    Serial.println(inPin);
-  }
+  public:
+    Input(int pin){
+      inPin = pin;
+      debounce = millis();
+      pinMode(inPin, INPUT_PULLUP);
+      oldpin = digitalRead(inPin);
+      Serial.print("INIT pin ");
+      Serial.println(inPin);
+    }
 
   void Check(){
-   Serial.print("Pin ");
-   Serial.print(inPin);
-   Serial.print(" ");
-   Serial.println(digitalRead(inPin));
-    if (digitalRead(inPin) && !oldpin){
-      Serial.print("CHANGED STATE ");
-      Serial.println(inPin);
-      oldpin = digitalRead(inPin);
-    }
-    if (!digitalRead(inPin) && oldpin){
-      oldpin = digitalRead(inPin);
+    if (millis() > debounce + 10){
+      if (!digitalRead(inPin) && oldpin){
+        Serial.print("PRESSED ");
+        Serial.println(inPin);
+        oldpin = digitalRead(inPin);
+        debounce = millis();
+      }
+      if (digitalRead(inPin) && !oldpin){
+        oldpin = !digitalRead(inPin);
+        debounce = millis();
+      }
     }
   }
 };
@@ -38,6 +41,4 @@ void setup() {
 void loop() {
   di1.Check();
   di2.Check();
-  Serial.println("Loop");
-  delay(200);
 }
