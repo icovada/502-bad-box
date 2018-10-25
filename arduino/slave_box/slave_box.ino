@@ -1,7 +1,7 @@
 class Input{
   int inPin;
   bool oldpin;
-  long debounce;
+  unsigned long debounce;
 
   public:
     Input(int pin){
@@ -14,15 +14,15 @@ class Input{
     }
 
   void Check(){
-    if (millis() > debounce + 10){
+    if (millis() > debounce + 50){
       if (!digitalRead(inPin) && oldpin){
         Serial.print("PRESSED ");
         Serial.println(inPin);
-        oldpin = digitalRead(inPin);
+        oldpin = 0
         debounce = millis();
       }
       if (digitalRead(inPin) && !oldpin){
-        oldpin = !digitalRead(inPin);
+        oldpin = 1
         debounce = millis();
       }
     }
