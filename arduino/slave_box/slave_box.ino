@@ -26,13 +26,13 @@ void receivedCallback( uint32_t from, String &msg ) {
 
   Serial.println(colour);
 
-  if (colour == String("FFFFFF")){
+  if (colour == "FFFFFF"){
     onoff = 1;
   } else {
     onoff = 0;
   }
 
-  digitalWrite(pinNumber, 1);
+  digitalWrite(pinNumber, onoff);
 
 }
 
