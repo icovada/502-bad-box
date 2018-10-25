@@ -14,33 +14,39 @@ void notifyChange(int pin){
 }
 
 void receivedCallback( uint32_t from, String &msg ) { 
+  Serial.println("received message");
   if (msg=="I am the captain now" && master_id==0){
     master_id=from;
   }  
   int pinNumber = msg.substring(0,1).toInt();
-  String colour = msg.substring(1);
+  String colour = msg.substring(1,7);
   bool onoff;
 
-  Serial.println(pinNumber);
   Serial.println(colour);
 
-  if (colour == "FFFFFF"){
+  if (colour == String("FFFFFF")){
     onoff = 1;
   } else {
     onoff = 0;
   }
 
-  digitalWrite(pinNumber, onoff);
+  Serial.println(onoff);
+  Serial.println(pinNumber);
+
+  digitalWrite(pinNumber, 1);
 
 }
 
 void newConnectionCallback(uint32_t nodeId) {
+  Serial.println("New Connection");
 }
 
 void changedConnectionCallback() {
+  Serial.println("Changed COnnection");
 }
 
 void nodeTimeAdjustedCallback(int32_t offset) {
+  Serial.println("Node time adjusted");
 }
 
 
@@ -88,6 +94,8 @@ void setup() {
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+  Serial.println("Finish setup");
+  pinMode(2, OUTPUT);
 }
 
 void loop() {
