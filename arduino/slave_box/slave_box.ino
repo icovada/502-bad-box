@@ -6,13 +6,17 @@
 
 painlessMesh  mesh;
 
-void sendMessage() {
-  String msg = "Hello from node ";
-  msg += mesh.getNodeId();
-  mesh.sendBroadcast( msg );
+uint32_t master_id = 0;
+
+void notifyChange(int pin){
+  String message = String(pin);
+  mesh.sendSingle(master_id, message);
 }
 
 void receivedCallback( uint32_t from, String &msg ) { 
+  if (msg=="I am the captain now" && master_id==0){
+    master_id=from;
+  }  
   int pinNumber = msg.substring(0,1).toInt();
   String colour = msg.substring(1);
   bool onoff;
@@ -60,6 +64,7 @@ class Input{
       if (!digitalRead(inPin) && oldpin){
         Serial.print("PRESSED ");
         Serial.println(inPin);
+        notifyChange(inPin);
         oldpin = 0;
         debounce = millis();
       }
