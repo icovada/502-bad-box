@@ -17,6 +17,8 @@ void receivedCallback( uint32_t from, String &msg ) {
   Serial.println("received message");
   if (msg=="I am the captain now" && master_id==0){
     master_id=from;
+    Serial.print("Master ID ");
+    Serial.println(master_id);
   }  
   int pinNumber = msg.substring(0,1).toInt();
   String colour = msg.substring(1,7);
@@ -29,9 +31,6 @@ void receivedCallback( uint32_t from, String &msg ) {
   } else {
     onoff = 0;
   }
-
-  Serial.println(onoff);
-  Serial.println(pinNumber);
 
   digitalWrite(pinNumber, 1);
 
