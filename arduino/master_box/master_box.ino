@@ -29,9 +29,6 @@ uint32_t ready;
 bool triggered;
 
 
-
-
-
 void newConnectionCallback(uint32_t nodeId) {
   String captain = "I am the captain now";
   mesh.sendBroadcast(captain);
