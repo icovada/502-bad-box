@@ -1,4 +1,5 @@
 #include "painlessMesh.h"
+#include "ArduinoJson.h"
 
 #define MESH_PREFIX "whateverYouLike"
 #define MESH_PASSWORD "somethingSneaky"
@@ -28,17 +29,27 @@ void receivedCallback(uint32_t from, String &msg)
   bool onoff;
 
   Serial.println(colour);
-
-  if (colour == "FFFFFF")
+  if (msg == "I am the captain now")
   {
-    onoff = 1;
+    master_id = from;
   }
   else
   {
-    onoff = 0;
-  }
+    const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(3) + 50;
+    DynamicJsonBuffer jsonBuffer(bufferSize);
+    // Array for "{led":"6","colour":[255,2552,55],"blink":3}";
 
-  digitalWrite(pinNumber, onoff);
+    JsonObject &root = jsonBuffer.parseObject(msg);
+
+    int led = root["led"]; // "6"
+
+    JsonArray &colour = root["colour"];
+
+    int blink = root["blink"];     // 3
+    int enabled = root["enabled"]; // 0
+
+    //LedStrip[led].SetColour(colour[0], colour[1], colour[2]);
+  }
 }
 
 void newConnectionCallback(uint32_t nodeId)
@@ -94,8 +105,63 @@ public:
   }
 };
 
-Input di1(4);
-Input di2(5);
+class LED
+{
+  int r;
+  int g;
+  int b;
+  bool state;
+  int blinkMode;
+  long blinkModulo;
+  int brightness;
+
+public:
+  void SetColour(int *colours)
+  {
+    r = colours[0];
+    g = colours[1];
+    b = colours[2];
+  }
+
+  void SetBrightness(int brgh){
+    brightness = brgh;
+  }
+
+  int *GetColour(uint32_t usec)
+  {
+    int curBrightness = 0;
+    static int rgb[3];
+    if (state == false)
+    {
+      curBrightness = 0;
+    }
+    else if ((state == true) && (blinkMode == 0))
+    {
+      curBrightness = brightness;
+    }
+    else if ((state == true) && (blinkMode == 1))
+    {
+      if (((usec / 1000) / blinkModulo) % 2 == 0)
+      {
+        curBrightness = 0;
+      }
+      else
+      {
+        curBrightness = brightness;
+      };
+    }
+    else if ((state == true) && (blinkMode == 2))
+    {
+      curBrightness = breathingLed();
+    }
+    rgb[0] = map(r, 0, 255, 0, curBrightness);
+    rgb[1] = map(g, 0, 255, 0, curBrightness);
+    rgb[2] = map(b, 0, 255, 0, curBrightness);
+    return rgb;
+  }
+};
+
+Input PIN[9] = {Input(16), Input(5), Input(4), Input(0), Input(2), Input(14), Input(12), Input(13), Input(15)};
 
 int breathingLed()
 {
@@ -158,9 +224,9 @@ int breathingLed()
     return (11);
   }
   if ((4511 < meshTime) && (meshTime < 5000))
-    {
-      return (0);
-    }
+  {
+    return (0);
+  }
 }
 
 void setup()
@@ -178,7 +244,11 @@ void setup()
 
 void loop()
 {
-  di1.Check();
-  di2.Check();
+
+  for (int i = 0; i < 9; i++)
+  {
+    PIN[i].Check();
+  }
+
   mesh.update();
 }
