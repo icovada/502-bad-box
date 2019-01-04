@@ -84,6 +84,54 @@ class Input{
 Input di1(4);
 Input di2(5);
 
+int breathingLed(){
+  //Values taken from http://thecustomgeek.com/2011/06/17/breathing-sleep-led/
+if ((0 < meshTime) && (meshTime < 208)){
+  return(0);
+}
+if ((208 < meshTime) && (meshTime < 654)){
+  return(12);
+}
+if ((654 < meshTime) && (meshTime < 1000)){
+  return(38);
+}
+if ((1000 < meshTime) && (meshTime < 1247)){
+  return(65);
+}
+if ((1247 < meshTime) && (meshTime < 1420)){
+  return(91);
+}
+if ((1420 < meshTime) && (meshTime < 1544)){
+  return(118);
+}
+if ((1544 < meshTime) && (meshTime < 1960)){
+  return(144);
+}
+if ((1960 < meshTime) && (meshTime < 2376)){
+  return(255);
+}
+if ((2376 < meshTime) && (meshTime < 2508)){
+  return(144);
+}
+if ((2508 < meshTime) && (meshTime < 2676)){
+  return(117);
+}
+if ((2676 < meshTime) && (meshTime < 3122)){
+  return(91);
+}
+if ((3122 < meshTime) && (meshTime < 3651)){
+  return(64);
+}
+if ((3651 < meshTime) && (meshTime < 4277)){
+  return(37);
+}
+if ((4277 < meshTime) && (meshTime < 4511)){
+  return(11);
+}
+if (4511 < meshTime) && (meshTime < 5000){
+  return(0);
+}
+}
 
 void setup() {
   // put your setup code here, to run once:
