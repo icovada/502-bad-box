@@ -1,12 +1,14 @@
 #include "painlessMesh.h"
 #include "ArduinoJson.h"
+#include "NeoPixelBrightnessBus.h"
 
 #define MESH_PREFIX "whateverYouLike"
 #define MESH_PASSWORD "somethingSneaky"
 #define MESH_PORT 5555
 
 painlessMesh mesh;
-
+LEDStrip leds;
+NeoPixelBus<NeoGrbFeature, NeoEsp8266Dma800KbpsMethod> strip(9, 3);
 uint32_t master_id = 0;
 
 void notifyChange(int pin)
@@ -59,7 +61,7 @@ void newConnectionCallback(uint32_t nodeId)
 
 void changedConnectionCallback()
 {
-  Serial.println("Changed COnnection");
+  Serial.println("Changed Connection");
 }
 
 void nodeTimeAdjustedCallback(int32_t offset)
@@ -123,14 +125,15 @@ public:
     b = colours[2];
   }
 
-  void SetBrightness(int brgh){
+  void SetBrightness(int brgh)
+  {
     brightness = brgh;
   }
 
-  int *GetColour(uint32_t usec)
+  RgbColor GetColour(uint32_t usec)
   {
     int curBrightness = 0;
-    static int rgb[3];
+    RgbColor rgb;
     if (state == false)
     {
       curBrightness = 0;
@@ -154,14 +157,36 @@ public:
     {
       curBrightness = breathingLed();
     }
-    rgb[0] = map(r, 0, 255, 0, curBrightness);
-    rgb[1] = map(g, 0, 255, 0, curBrightness);
-    rgb[2] = map(b, 0, 255, 0, curBrightness);
+    rgb = (map(r, 0, 255, 0, curBrightness),
+           map(g, 0, 255, 0, curBrightness),
+           map(b, 0, 255, 0, curBrightness));
     return rgb;
   }
 };
 
-Input PIN[9] = {Input(16), Input(5), Input(4), Input(0), Input(2), Input(14), Input(12), Input(13), Input(15)};
+class LEDStrip
+{
+  int striplen = 9;
+  LED ledarr[9];
+
+public:
+  void init(int *pinarray)
+  {
+    for (int i = 0; i < striplen; i++)
+    {
+      ledarr[i] = LED();
+    }
+  }
+
+  void update()
+  {
+    for (int i = 0; i < striplen; i++)
+    {
+      strip.SetPixelColor(i, ledarr[i].GetColour(mesh.getNodeTime()));
+    }
+    strip.Show();
+  }
+};
 
 int breathingLed()
 {
@@ -238,17 +263,23 @@ void setup()
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+
+  int pinlist[9] = {16, 5, 4, 0, 2, 14, 12, 13, 15};
+  leds.init(&pinlist, 9);
+
   Serial.println("Finish setup");
+  pinMode(16, OUTPUT);
+  pinMode(15, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(0, OUTPUT);
   pinMode(2, OUTPUT);
+  pinMode(14, OUTPUT);
+  pinMode(12, OUTPUT);
+  pinMode(13, OUTPUT);
+  pinMode(15, OUTPUT);
 }
 
 void loop()
 {
-
-  for (int i = 0; i < 9; i++)
-  {
-    PIN[i].Check();
-  }
-
   mesh.update();
 }
