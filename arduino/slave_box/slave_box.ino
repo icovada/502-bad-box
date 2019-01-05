@@ -301,6 +301,7 @@ void setup()
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   Serial.println("Mesh initialised");
+  strip.Begin();
   for (int i = 0; i < LEDNUMBER; i++)
   {
     ledstrip[i] = LED();
