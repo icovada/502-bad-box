@@ -6,7 +6,7 @@
 #define MESH_PASSWORD "somethingSneaky"
 #define MESH_PORT 5555
 
-#define LEDNUMBER 1
+#define LEDNUMBER 9
 
 painlessMesh mesh;
 
@@ -151,9 +151,6 @@ public:
     int outr = map(r, 0, 255, 0, curBrightness);
     int outg = map(g, 0, 255, 0, curBrightness);
     int outb = map(b, 0, 255, 0, curBrightness);
-    Serial.print(r);
-    Serial.print(g);
-    Serial.println(b);
     rgb = (outr, outg, outb);
     return rgb;
   }
@@ -225,7 +222,7 @@ void nodeTimeAdjustedCallback(int32_t offset)
   Serial.println("Node time adjusted");
 }
 
-/* class InputPin
+class InputPin
 {
   int inPin;
   bool oldpin;
@@ -263,18 +260,18 @@ public:
       }
     }
   }
-}; */
+};
 
-/* class InputManager
+class InputManager
 {
   InputPin inputs[9];
 
 public:
-  InputManager(int pinlist[9])
+  InputManager(int pinlist[])
   {
-    for (int i = 0; i < 9; i++)
+    for (int i = 0; i < LEDNUMBER; i++)
     {
-      inputs[i] = InputPin(8); //pinlist[i]);
+      inputs[i] = InputPin(pinlist[i]);
     }
   }
 
@@ -285,21 +282,20 @@ public:
       inputs[i].Check();
     }
   }
-}; */
+};
 
-//int pins[9] = {16, 5, 4, 0, 2, 14, 12, 13, 15};
-//InputManager switches(pins);
 
 void setup()
 {
   Serial.begin(115200);
   Serial.println("Start sketch");
-  //mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE );
   mesh.init(MESH_PREFIX, MESH_PASSWORD, MESH_PORT);
   mesh.onReceive(&receivedCallback);
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+  int pins[] = {16, 5, 4, 0, 2, 14, 12, 13, 15};
+  InputManager switches(pins);
   Serial.println("Mesh initialised");
   strip.Begin();
   for (int i = 0; i < LEDNUMBER; i++)
@@ -314,14 +310,8 @@ void loop()
 {
   for (int i = 0; i < LEDNUMBER; i++)
   {
-    Serial.println(i);
     strip.SetPixelColor(i, ledstrip[i].GetColour(mesh.getNodeTime()));
-  }
-  while (!strip.CanShow())
-  {
-    Serial.println(">");
   }
   strip.Show();
   mesh.update();
-  Serial.println("Looped");
 }
