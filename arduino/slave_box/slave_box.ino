@@ -6,9 +6,11 @@
 #define MESH_PASSWORD "somethingSneaky"
 #define MESH_PORT 5555
 
+#define LEDNUMBER 1
+
 painlessMesh mesh;
 
-NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(9);
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(LEDNUMBER);
 uint32_t master_id = 0;
 
 int breathingLed()
@@ -157,7 +159,7 @@ public:
   }
 };
 
-LED ledstrip[9];
+LED ledstrip[LEDNUMBER];
 
 void notifyChange(int pin)
 {
@@ -299,7 +301,7 @@ void setup()
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   Serial.println("Mesh initialised");
-  for (int i = 0; i < 9; i++)
+  for (int i = 0; i < LEDNUMBER; i++)
   {
     ledstrip[i] = LED();
   }
@@ -309,10 +311,14 @@ void setup()
 
 void loop()
 {
-  for (int i = 0; i < 9; i++)
+  for (int i = 0; i < LEDNUMBER; i++)
   {
     Serial.println(i);
     strip.SetPixelColor(i, ledstrip[i].GetColour(mesh.getNodeTime()));
+  }
+  while (!strip.CanShow())
+  {
+    Serial.println(">");
   }
   strip.Show();
   mesh.update();
