@@ -224,39 +224,41 @@ void nodeTimeAdjustedCallback(int32_t offset)
 
 class InputPin
 {
-  int inPin;
-  bool oldpin;
-  unsigned long debounce;
+protected:
+  bool _oldpin;
+  unsigned long _debounce;
+  int _pin;
 
 public:
   InputPin() {}
 
-  InputPin(int inPin)
+  InputPin(int pin)
   {
-    debounce = millis();
-    pinMode(inPin, OUTPUT);
-    pinMode(inPin, INPUT_PULLUP);
-    oldpin = digitalRead(inPin);
+    _pin = pin;
+    _debounce = millis();
+    pinMode(_pin, INPUT);
+    pinMode(_pin, INPUT_PULLUP);
+    _oldpin = digitalRead(_pin);
     Serial.print("INIT pin ");
-    Serial.println(inPin);
+    Serial.println(_pin);
   }
 
   void Check()
   {
-    if (millis() > debounce + 50)
+    if (millis() > _debounce + 50)
     {
-      if (!digitalRead(inPin) && oldpin)
+      if (!digitalRead(_pin) && _oldpin)
       {
         Serial.print("PRESSED ");
-        Serial.println(inPin);
-        notifyChange(inPin);
-        oldpin = 0;
-        debounce = millis();
+        Serial.println(_pin);
+        notifyChange(_pin);
+        _oldpin = 0;
+        _debounce = millis();
       }
-      if (digitalRead(inPin) && !oldpin)
+      if (digitalRead(_pin) && !_oldpin)
       {
-        oldpin = 1;
-        debounce = millis();
+        _oldpin = 1;
+        _debounce = millis();
       }
     }
   }
@@ -264,14 +266,15 @@ public:
 
 class InputManager
 {
-  InputPin inputs[9];
+protected:
+  InputPin _inputs[9];
 
 public:
   InputManager(int pinlist[])
   {
     for (int i = 0; i < LEDNUMBER; i++)
     {
-      inputs[i] = InputPin(pinlist[i]);
+      _inputs[i] = InputPin(pinlist[i]);
     }
   }
 
@@ -279,11 +282,13 @@ public:
   {
     for (int i = 0; i < 9; i++)
     {
-      inputs[i].Check();
+      _inputs[i].Check();
     }
   }
 };
 
+int pins[] = {16, 5, 4, 0, 2, 14, 12, 13, 15};
+InputManager switches(pins);
 
 void setup()
 {
@@ -294,8 +299,7 @@ void setup()
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
-  int pins[] = {16, 5, 4, 0, 2, 14, 12, 13, 15};
-  InputManager switches(pins);
+
   Serial.println("Mesh initialised");
   strip.Begin();
   for (int i = 0; i < LEDNUMBER; i++)
@@ -308,6 +312,7 @@ void setup()
 
 void loop()
 {
+  switches.Check();
   for (int i = 0; i < LEDNUMBER; i++)
   {
     strip.SetPixelColor(i, ledstrip[i].GetColour(mesh.getNodeTime()));
