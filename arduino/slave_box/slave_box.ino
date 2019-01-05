@@ -13,6 +13,9 @@ painlessMesh mesh;
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(LEDNUMBER);
 uint32_t master_id = 0;
 
+const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(3) + 70;
+DynamicJsonBuffer jsonBuffer(bufferSize);
+
 class LED
 {
   int r = 0;
@@ -159,12 +162,7 @@ private:
 
 LED ledstrip[LEDNUMBER];
 
-void notifyChange(int pin)
-{
-  String message = String(pin);
-  mesh.sendSingle(master_id, message);
-}
-
+// --------------------------------------------------------- painlessMesh
 void receivedCallback(uint32_t from, String &msg)
 {
   Serial.println("received message");
@@ -176,8 +174,6 @@ void receivedCallback(uint32_t from, String &msg)
   }
   else
   {
-    const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(3) + 70;
-    DynamicJsonBuffer jsonBuffer(bufferSize);
     /* Array for {"led":6,
                   "colour":[255,2552,55],
                   "blink":3,
@@ -222,14 +218,10 @@ void nodeTimeAdjustedCallback(int32_t offset)
 {
   Serial.println("Node time adjusted");
 }
+// --------------------------------------------------------- painlessMesh
 
 class InputPin
 {
-protected:
-  bool _oldpin;
-  unsigned long _debounce;
-  int _pin;
-
 public:
   InputPin() {}
 
@@ -240,28 +232,78 @@ public:
     pinMode(_pin, INPUT);
     pinMode(_pin, INPUT_PULLUP);
     _oldpin = digitalRead(_pin);
-    Serial.print("INIT pin ");
-    Serial.println(_pin);
+  }
+
+  InputPin(int pin, bool islatching)
+  {
+    _pin = pin;
+    _latching = islatching;
+    _debounce = millis();
+    pinMode(_pin, INPUT);
+    pinMode(_pin, INPUT_PULLUP);
+    _oldpin = digitalRead(_pin);
   }
 
   void Check()
   {
-    if (millis() > _debounce + 50)
+    if (millis() > _debounce + 30)
     {
-      if (!digitalRead(_pin) && _oldpin)
+      bool pinStatus = digitalRead(_pin);
+      if (_latching)
       {
-        Serial.print("PRESSED ");
-        Serial.println(_pin);
-        notifyChange(_pin);
-        _oldpin = 0;
-        _debounce = millis();
+        if (pinStatus != _oldpin)
+        {
+          _notifyChange("single");
+          _oldpin = pinStatus;
+        }
       }
-      if (digitalRead(_pin) && !_oldpin)
-      {
-        _oldpin = 1;
-        _debounce = millis();
+      else
+      { //PIN is 0 if closed
+        if (!pinStatus && _oldpin)  
+        { // if pressed and was not pressed
+          _oldpin = 0;
+          _lock = true;
+          _activationTimer = millis();
+        }
+        else if (((millis() - _activationTimer) > 400) && _lock)
+        { // If still pressed after 400 ms
+          _lock = false;
+          _notifyChange("long");
+        }
+        else if (pinStatus && !_oldpin)
+        { // if Let go
+          if (_lock)
+          { // if still in action
+            _oldpin = 1;
+            _lock = false;
+            _notifyChange("single");
+          }
+          else
+          {
+            _oldpin = 1;
+          }
+        }
       }
+      _debounce = millis();
     }
+  }
+
+protected:
+  bool _lock;
+  bool _oldpin;
+  bool _latching;
+  unsigned long _debounce;
+  int _pin;
+  uint32_t _activationTimer;
+
+  void _notifyChange(String action)
+  {
+    JsonObject &root = jsonBuffer.createObject();
+    root["pin"] = _pin;
+    root["action"] = action;
+    String message;
+    root.printTo(message);
+    mesh.sendSingle(master_id, message);
   }
 };
 
@@ -271,11 +313,11 @@ protected:
   InputPin _inputs[9];
 
 public:
-  InputManager(int pinlist[])
+  InputManager(int pinlist[], bool switchtype[])
   {
     for (int i = 0; i < LEDNUMBER; i++)
     {
-      _inputs[i] = InputPin(pinlist[i]);
+      _inputs[i] = InputPin(pinlist[i], switchtype[i]);
     }
   }
 
@@ -288,8 +330,9 @@ public:
   }
 };
 
-int pins[] = {16, 5, 4, 0, 2, 14, 12, 13, 15};
-InputManager switches(pins);
+int pins[]   = {16, 5, 4, 0, 2, 14, 12, 13, 15};
+bool latch[] = {0 , 1, 0, 0, 0,  0,  0,  0,  0};
+InputManager switches(pins, latch);
 
 void setup()
 {
