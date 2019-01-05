@@ -13,8 +13,7 @@ painlessMesh mesh;
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(LEDNUMBER);
 uint32_t master_id = 0;
 
-const size_t bufferSize = JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(3) + 70;
-DynamicJsonBuffer jsonBuffer(bufferSize);
+StaticJsonBuffer<200> jsonBuffer;
 
 class LED
 {
@@ -259,7 +258,7 @@ public:
       }
       else
       { //PIN is 0 if closed
-        if (!pinStatus && _oldpin)  
+        if (!pinStatus && _oldpin)
         { // if pressed and was not pressed
           _oldpin = 0;
           _lock = true;
@@ -330,14 +329,38 @@ public:
   }
 };
 
-int pins[]   = {16, 5, 4, 0, 2, 14, 12, 13, 15};
-bool latch[] = {0 , 1, 0, 0, 0,  0,  0,  0,  0};
+int pins[] = {16, 5, 4, 0, 2, 14, 12, 13, 15};
+bool latch[] = {0, 1, 0, 0, 0, 0, 0, 0, 0};
 InputManager switches(pins, latch);
 
 void setup()
 {
   Serial.begin(115200);
   Serial.println("Start sketch");
+
+  /*   SPIFFS.begin();
+
+  if (!SPIFFS.exists("/formatComplete.txt"))
+  {
+    Serial.println("Please wait 30 secs for SPIFFS to be formatted");
+    SPIFFS.format();
+    Serial.println("Spiffs formatted");
+
+    File f = SPIFFS.open("/formatComplete.txt", "w");
+    if (!f)
+    {
+      Serial.println("file open failed");
+    }
+    else
+    {
+      f.println("Format Complete");
+    }
+  }
+  else
+  {
+    Serial.println("SPIFFS is formatted. Moving along...");
+  } */
+
   mesh.init(MESH_PREFIX, MESH_PASSWORD, MESH_PORT);
   mesh.onReceive(&receivedCallback);
   mesh.onNewConnection(&newConnectionCallback);
