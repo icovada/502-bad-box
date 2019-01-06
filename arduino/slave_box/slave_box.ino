@@ -13,7 +13,7 @@ painlessMesh mesh;
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(LEDNUMBER);
 uint32_t master_id = 0;
 
-StaticJsonBuffer<200> jsonBuffer;
+StaticJsonBuffer<400> jsonBuffer;
 
 class LED
 {
@@ -164,7 +164,7 @@ LED ledstrip[LEDNUMBER];
 // --------------------------------------------------------- painlessMesh
 void receivedCallback(uint32_t from, String &msg)
 {
-  Serial.println("received message");
+  Serial.println(msg);
   if (msg == "I am the captain now" && master_id == 0)
   {
     master_id = from;
@@ -173,32 +173,34 @@ void receivedCallback(uint32_t from, String &msg)
   }
   else
   {
-    /* Array for {"led":6,
-                  "colour":[255,2552,55],
-                  "blink":3,
-                  "blinkModulo":2500,
-                  "enabled": true}; */
+    /* Array for {"state": "ON",
+                  "brightness": 146,
+                  "color": {"r": 255, "g": 255, "b": 255},
+                  "effect": "breathing",
+                  "flash":5000} */
 
     JsonObject &root = jsonBuffer.parseObject(msg);
 
     int led = root["led"];
 
-    if (root.containsKey("colour"))
+    if (root.containsKey("color"))
     {
-      JsonArray &colour = root["colour"];
-      //ledstrip[led].SetColour(colour[0], colour[1], colour[2]);
+      JsonArray &colour = root["color"];
+      ledstrip[led].SetColour(colour[0], colour[1], colour[2]);
+      Serial.print("LED ");
+      Serial.print(led);
+      Serial.print(" set to ");
+      Serial.print(int(colour[0]));
+      Serial.print(int(colour[1]));
+      Serial.println(int(colour[2]));
     }
-    if (root.containsKey("blink"))
+    if (root.containsKey("effect"))
     {
       //ledstrip[led].SetBlink(root["blink"]);
     }
-    if (root.containsKey("blinkModulo"))
-    {
-      //ledstrip[led].SetBlinkModulo(root["blinkModulo"]);
-    }
     if (root.containsKey("enabled"))
     {
-      //ledstrip[led].SetState(root["enabled"]);
+      ledstrip[led].SetState(root["enabled"]);
     }
   }
 }
