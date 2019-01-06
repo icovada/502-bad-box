@@ -17,13 +17,13 @@ StaticJsonBuffer<400> jsonBuffer;
 
 class LED
 {
+  bool state = false;
+  int brightness = 255;
   int r = 0;
   int g = 0;
   int b = 0;
-  bool state = false;
-  int blinkMode = 0;
-  long blinkModulo = 1000;
-  int brightness = 255;
+  int effect = 0;
+  long flash = 2500;
 
 public:
   void SetColour(int ir, int ig, int ib)
@@ -38,16 +38,16 @@ public:
     brightness = value;
   }
 
-  void SetBlink(int value)
+  void SetEffect(int value)
   {
-    blinkMode = value;
+    effect = value;
   }
 
-  void SetBlinkModulo(long value)
+  void SetFlash(long value)
   {
     if (value != 0) //Dividing by 0 is never a good idea
     {
-      blinkModulo = value;
+      flash = value;
     }
   }
 
@@ -64,13 +64,13 @@ public:
     {
       curBrightness = 0;
     }
-    else if ((state == true) && (blinkMode == 0))
+    else if ((state == true) && (effect == 0))
     {
       curBrightness = brightness;
     }
-    else if ((state == true) && (blinkMode == 1))
+    else if ((state == true) && (effect == 1))
     {
-      if (((usec / 1000) / blinkModulo) % 2 == 0)
+      if (((usec / 1000) / effect) % 2 == 0)
       {
         curBrightness = 0;
       }
@@ -79,7 +79,7 @@ public:
         curBrightness = brightness;
       };
     }
-    else if ((state == true) && (blinkMode == 2))
+    else if ((state == true) && (effect == 2))
     {
       curBrightness = breathingLed();
     }
@@ -173,34 +173,40 @@ void receivedCallback(uint32_t from, String &msg)
   }
   else
   {
-    /* Array for {"state": "ON",
-                  "brightness": 146,
-                  "color": {"r": 255, "g": 255, "b": 255},
-                  "effect": "breathing",
-                  "flash":5000} */
+    /* Array for {"led":"1",
+                  "data": {"state": "ON",
+                           "brightness": 146,
+                           "color": {"r": 255, "g": 255, "b": 255},
+                           "effect": "breathing",
+                           "flash":5000}} */
 
     JsonObject &root = jsonBuffer.parseObject(msg);
 
-    int led = root["led"];
+    if (root.containsKey("led"))
+    {
+      int led = root["led"].as<int>();
+      JsonObject &data = root["data"];
 
-    if (root.containsKey("color"))
-    {
-      JsonArray &colour = root["color"];
-      ledstrip[led].SetColour(colour[0], colour[1], colour[2]);
-      Serial.print("LED ");
-      Serial.print(led);
-      Serial.print(" set to ");
-      Serial.print(int(colour[0]));
-      Serial.print(int(colour[1]));
-      Serial.println(int(colour[2]));
-    }
-    if (root.containsKey("effect"))
-    {
-      //ledstrip[led].SetBlink(root["blink"]);
-    }
-    if (root.containsKey("enabled"))
-    {
-      ledstrip[led].SetState(root["enabled"]);
+      if (data.containsKey("color"))
+      {
+        JsonObject &colour = data["color"];
+
+        ledstrip[led].SetColour(colour["r"],
+                                colour["g"],
+                                colour["b"]);
+      }
+      if (data.containsKey("effect"))
+      {
+        ledstrip[led].SetEffect(data["blink"]);
+      }
+      if (data.containsKey("enabled"))
+      {
+        ledstrip[led].SetState(data["enabled"]);
+      }
+      if (data.containsKey("flash"))
+      {
+        ledstrip[led].SetFlash(data["flash"]);
+      }
     }
   }
 }
@@ -297,11 +303,11 @@ protected:
   int _pin;
   uint32_t _activationTimer;
 
-  void _notifyChange(String action)
+  void _notifyChange(String event)
   {
     JsonObject &root = jsonBuffer.createObject();
-    root["pin"] = _pin;
-    root["action"] = action;
+    root["pin"] = String(_pin);
+    root["data"]["event"] = event;
     String message;
     root.printTo(message);
     mesh.sendSingle(master_id, message);

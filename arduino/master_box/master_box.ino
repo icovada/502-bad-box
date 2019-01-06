@@ -34,7 +34,6 @@ Else, only from /503-bad-box/from/nodeId
 
 */
 
-
 #include <PubSubClient.h>
 #include <WiFiClient.h>
 #include "painlessMesh.h"
@@ -89,9 +88,33 @@ void nodeTimeAdjustedCallback(int32_t offset)
 
 void receivedCallback(const uint32_t &from, const String &msg)
 {
-  Serial.printf("bridge: Received from %u msg=%s\n", from, msg.c_str());
-  String topic = "/503-bad-box/from/" + String(from);
-  mqttClient.publish(topic.c_str(), msg.c_str());
+  JsonObject &root = jsonBuffer.parseObject(msg);
+  
+  String topic = "/503-bad-box/from/" + String(from) + "/";
+  String message;
+
+  if (root.containsKey("data") && (root.size() == 2))
+  {
+    JsonObject &data = root["data"];
+    String x;
+    String y;
+    for (JsonPair &p : root)
+    {
+      //p.key       // is a const char* pointing to the key
+      //p.value     // is a JsonVariant
+      if (!strcmp(p.key, "data"))
+      {
+        topic = topic + p.key + "/" + String(p.value.as<char>()).c_str();;
+      }
+    }
+    data.printTo(message);
+
+    String sender = String(from);
+
+    mqttClient.publish(topic.c_str(), message.c_str());
+  } else {
+    mqttClient.publish(topic.c_str(), msg.c_str());
+  }
 }
 
 void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
@@ -103,7 +126,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   free(cleanPayload);
 
   String Stopic = String(topic).substring(16); // /503-bad-box/to/758607613/1
-  uint32_t target = strtoul(Stopic.substring(0,9).c_str(), NULL, 10);
+  uint32_t target = strtoul(Stopic.substring(0, 9).c_str(), NULL, 10);
   Stopic = "";
   Serial.print(Stopic);
 
@@ -119,32 +142,36 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     mesh.sendBroadcast(msg);
   }
 
-
-  else    //IT'S A JSON!
+  else //IT'S A JSON!
   {
     if (mesh.isConnected(target))
     {
-      if (msg.endsWith("/")){
-        // msg ends with a /. It is NOT valid
+      if (Stopic.endsWith("/"))
+      {
+        // Stopic ends with a /. It is NOT valid
         return;
       }
-      if (msg.indexOf("/", 9) == -1)
-      {  //If this is a direct message to a node
+
+      if (Stopic.indexOf("/", 9) == -1)
+      { //If this is a direct message to a node after a valid 9 digit nodeID
         mesh.sendSingle(target, msg);
       }
+
       else
-      {  //if this contains x and y
-        int slash = msg.indexOf("/", 10);
+      { //if this contains x and y
+        int slash = Stopic.indexOf("/", 10);
+        String x = Stopic.substring(10, slash - 10).c_str();
+        String y = Stopic.substring(slash + 1).c_str();
 
+        JsonObject &object = jsonBuffer.createObject();
+        object[x] = y;
+        object["data"] = RawJson(msg);
+
+        String fulljson;
+        object.printTo(fulljson);
+
+        mesh.sendSingle(target, fulljson);
       }
-
-
-
-      JsonObject& root = jsonBuffer.parseObject(msg);
-      root["led"] = Stopic.substring(10, Stopic.length());
-      root.printTo(msg);
-      Serial.println(msg);
-      mesh.sendSingle(target, msg);
     }
     else
     {
