@@ -102,7 +102,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   String msg = String(cleanPayload);
   free(cleanPayload);
 
-  String Stopic = String(topic).substring(17); // /503-bad-box/to/758607613/1
+  String Stopic = String(topic).substring(16); // /503-bad-box/to/758607613/1
   uint32_t target = strtoul(Stopic.substring(0,9).c_str(), NULL, 10);
   Stopic = "";
   Serial.print(Stopic);
