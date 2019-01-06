@@ -13,8 +13,6 @@ painlessMesh mesh;
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(LEDNUMBER);
 uint32_t master_id = 0;
 
-StaticJsonBuffer<400> jsonBuffer;
-
 class LED
 {
   bool state = false;
@@ -22,7 +20,7 @@ class LED
   int r = 0;
   int g = 0;
   int b = 0;
-  int effect = 0;
+  String effect = "Fixed";
   long flash = 2500;
 
 public:
@@ -38,7 +36,7 @@ public:
     brightness = value;
   }
 
-  void SetEffect(int value)
+  void SetEffect(String value)
   {
     effect = value;
   }
@@ -51,9 +49,16 @@ public:
     }
   }
 
-  void SetState(bool value)
+  void SetState(String value)
   {
-    state = value;
+    if (value == "ON")
+    {
+      state = true;
+    }
+    else
+    {
+      state = false;
+    }
   }
 
   RgbColor GetColour(uint32_t usec)
@@ -64,13 +69,13 @@ public:
     {
       curBrightness = 0;
     }
-    else if ((state == true) && (effect == 0))
+    else if ((state == true) && (effect == "Fixed"))
     {
       curBrightness = brightness;
     }
-    else if ((state == true) && (effect == 1))
+    else if ((state == true) && (effect == "Blink"))
     {
-      if (((usec / 1000) / effect) % 2 == 0)
+      if (((usec / 1000) / flash) % 2 == 0)
       {
         curBrightness = 0;
       }
@@ -79,7 +84,7 @@ public:
         curBrightness = brightness;
       };
     }
-    else if ((state == true) && (effect == 2))
+    else if ((state == true) && (effect == "Breathing"))
     {
       curBrightness = breathingLed();
     }
@@ -164,12 +169,10 @@ LED ledstrip[LEDNUMBER];
 // --------------------------------------------------------- painlessMesh
 void receivedCallback(uint32_t from, String &msg)
 {
-  Serial.println(msg);
+  StaticJsonBuffer<400> jsonBuffer;
   if (msg == "I am the captain now" && master_id == 0)
   {
     master_id = from;
-    Serial.print("Master ID ");
-    Serial.println(master_id);
   }
   else
   {
@@ -186,7 +189,6 @@ void receivedCallback(uint32_t from, String &msg)
     {
       int led = root["led"].as<int>();
       JsonObject &data = root["data"];
-
       if (data.containsKey("color"))
       {
         JsonObject &colour = data["color"];
@@ -197,15 +199,19 @@ void receivedCallback(uint32_t from, String &msg)
       }
       if (data.containsKey("effect"))
       {
-        ledstrip[led].SetEffect(data["blink"]);
+        ledstrip[led].SetEffect(String(data["effect"].as<char *>()).c_str());
       }
-      if (data.containsKey("enabled"))
+      if (data.containsKey("state"))
       {
-        ledstrip[led].SetState(data["enabled"]);
+        ledstrip[led].SetState(data["state"]);
       }
       if (data.containsKey("flash"))
       {
         ledstrip[led].SetFlash(data["flash"]);
+      }
+      if (data.containsKey("brightness"))
+      {
+        ledstrip[led].SetBrightness(data["brightness"]);
       }
     }
   }
@@ -261,6 +267,7 @@ public:
         if (pinStatus != _oldpin)
         {
           _notifyChange("single");
+          Serial.println("Single press");
           _oldpin = pinStatus;
         }
       }
@@ -275,6 +282,7 @@ public:
         else if (((millis() - _activationTimer) > 400) && _lock)
         { // If still pressed after 400 ms
           _lock = false;
+          Serial.println("Long press");
           _notifyChange("long");
         }
         else if (pinStatus && !_oldpin)
@@ -283,6 +291,7 @@ public:
           { // if still in action
             _oldpin = 1;
             _lock = false;
+            Serial.println("Single press");
             _notifyChange("single");
           }
           else
@@ -305,9 +314,12 @@ protected:
 
   void _notifyChange(String event)
   {
+    StaticJsonBuffer<400> jsonBuffer;
     JsonObject &root = jsonBuffer.createObject();
     root["pin"] = String(_pin);
-    root["data"]["event"] = event;
+
+    JsonObject &data = root.createNestedObject("data");
+    data["event"] = event;
     String message;
     root.printTo(message);
     mesh.sendSingle(master_id, message);
