@@ -4,12 +4,13 @@ MQTT to mesh:
 -------------
 
 MQTT topics to be formatted like this:
-/painlessMesh/to/nodeId/x/y
+/503-bad-box/to/nodeId/x/y
 
 MQTT message MUST be a valid JSON
 
-If topic does not contain x and y, JSON
-is to be passed without any modification
+If topic does not contain x and y
+/503-bad-box/to/nodeID
+JSON is to be passed without any modification
 
 If topic contains x and y, Json is to be
 modified as follows:
@@ -27,9 +28,9 @@ Same applies the other way around:
 If incoming JSON contains only 2 nodes,
 one of which is called "data" and contains another
 JSON, it is to be sent to
-/painlessMesh/from/nodeId/x/y
+/503-bad-box/from/nodeId/x/y
 
-Else, only from /painlessMesh/from/nodeId
+Else, only from /503-bad-box/from/nodeId
 
 */
 
@@ -42,8 +43,8 @@ Else, only from /painlessMesh/from/nodeId
 #define MESH_PASSWORD "somethingSneaky"
 #define MESH_PORT 5555
 
-//#define STATION_SSID "mosquittotest"
-//#define STATION_PASSWORD "mosquittotest"
+#define STATION_SSID "mosquittotest"
+#define STATION_PASSWORD "mosquittotest"
 
 #define HOSTNAME "503badboxmaster"
 
@@ -89,7 +90,7 @@ void nodeTimeAdjustedCallback(int32_t offset)
 void receivedCallback(const uint32_t &from, const String &msg)
 {
   Serial.printf("bridge: Received from %u msg=%s\n", from, msg.c_str());
-  String topic = "/painlessMesh/from/" + String(from);
+  String topic = "/503-bad-box/from/" + String(from);
   mqttClient.publish(topic.c_str(), msg.c_str());
 }
 
@@ -101,7 +102,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   String msg = String(cleanPayload);
   free(cleanPayload);
 
-  String Stopic = String(topic).substring(17); // /painlessMesh/to/758607613/1
+  String Stopic = String(topic).substring(17); // /503-bad-box/to/758607613/1
   uint32_t target = strtoul(Stopic.substring(0,9).c_str(), NULL, 10);
   Stopic = "";
   Serial.print(Stopic);
@@ -110,17 +111,35 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   {
     if (msg == "getNodes")
     {
-      mqttClient.publish("/painlessMesh/from/gateway", mesh.subConnectionJson().c_str());
+      mqttClient.publish("/503-bad-box/from/gateway", mesh.subConnectionJson().c_str());
     }
   }
   else if (Stopic == "broadcast")
   {
     mesh.sendBroadcast(msg);
   }
-  else
+
+
+  else    //IT'S A JSON!
   {
     if (mesh.isConnected(target))
     {
+      if (msg.endsWith("/")){
+        // msg ends with a /. It is NOT valid
+        return;
+      }
+      if (msg.indexOf("/", 9) == -1)
+      {  //If this is a direct message to a node
+        mesh.sendSingle(target, msg);
+      }
+      else
+      {  //if this contains x and y
+        int slash = msg.indexOf("/", 10);
+
+      }
+
+
+
       JsonObject& root = jsonBuffer.parseObject(msg);
       root["led"] = Stopic.substring(10, Stopic.length());
       root.printTo(msg);
@@ -129,7 +148,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     }
     else
     {
-      mqttClient.publish("/painlessMesh/from/gateway", "Client not connected!");
+      mqttClient.publish("/503-bad-box/from/gateway", "Client not connected!");
     }
   }
 }
@@ -159,10 +178,10 @@ void loop()
     myIP = getlocalIP();
     Serial.println("My IP is " + myIP.toString());
 
-    if (mqttClient.connect("painlessMeshClienticovada"))
+    if (mqttClient.connect("503-bad-box-master"))
     {
-      mqttClient.publish("/painlessMesh/from/gateway", "Ready!");
-      mqttClient.subscribe("/painlessMesh/to/#");
+      mqttClient.publish("/503-bad-box/from/gateway", "Ready!");
+      mqttClient.subscribe("/503-bad-box/to/#");
       Serial.println("MQTT connected");
     }
   }
