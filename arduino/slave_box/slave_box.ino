@@ -170,49 +170,45 @@ LED ledstrip[LEDNUMBER];
 void receivedCallback(uint32_t from, String &msg)
 {
   StaticJsonBuffer<400> jsonBuffer;
-  if (msg == "I am the captain now" && master_id == 0)
+  JsonObject &root = jsonBuffer.parseObject(msg);
+  /* Array for {"led":"1",
+                "data": {"state": "ON",
+                         "brightness": 146,
+                         "color": {"r": 255, "g": 255, "b": 255},
+                         "effect": "breathing",
+                         "flash":5000}} */
+
+  if (root.containsKey("root"))
   {
     master_id = from;
   }
-  else
+  else if (root.containsKey("led"))
   {
-    /* Array for {"led":"1",
-                  "data": {"state": "ON",
-                           "brightness": 146,
-                           "color": {"r": 255, "g": 255, "b": 255},
-                           "effect": "breathing",
-                           "flash":5000}} */
-
-    JsonObject &root = jsonBuffer.parseObject(msg);
-
-    if (root.containsKey("led"))
+    int led = root["led"].as<int>();
+    JsonObject &data = root["data"];
+    if (data.containsKey("color"))
     {
-      int led = root["led"].as<int>();
-      JsonObject &data = root["data"];
-      if (data.containsKey("color"))
-      {
-        JsonObject &colour = data["color"];
+      JsonObject &colour = data["color"];
 
-        ledstrip[led].SetColour(colour["r"],
-                                colour["g"],
-                                colour["b"]);
-      }
-      if (data.containsKey("effect"))
-      {
-        ledstrip[led].SetEffect(String(data["effect"].as<char *>()).c_str());
-      }
-      if (data.containsKey("state"))
-      {
-        ledstrip[led].SetState(data["state"]);
-      }
-      if (data.containsKey("flash"))
-      {
-        ledstrip[led].SetFlash(data["flash"]);
-      }
-      if (data.containsKey("brightness"))
-      {
-        ledstrip[led].SetBrightness(data["brightness"]);
-      }
+      ledstrip[led].SetColour(colour["r"],
+                              colour["g"],
+                              colour["b"]);
+    }
+    if (data.containsKey("effect"))
+    {
+      ledstrip[led].SetEffect(String(data["effect"].as<char *>()).c_str());
+    }
+    if (data.containsKey("state"))
+    {
+      ledstrip[led].SetState(data["state"]);
+    }
+    if (data.containsKey("flash"))
+    {
+      ledstrip[led].SetFlash(data["flash"]);
+    }
+    if (data.containsKey("brightness"))
+    {
+      ledstrip[led].SetBrightness(data["brightness"]);
     }
   }
 }

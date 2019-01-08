@@ -66,14 +66,14 @@ bool triggered;
 
 void newConnectionCallback(uint32_t nodeId)
 {
-  String captain = "I am the captain now";
+  String captain = "{'root':'me'}";
   mesh.sendBroadcast(captain);
   Serial.print("New Connection ");
 }
 
 void changedConnectionCallback()
 {
-  String captain = "I am the captain now";
+  String captain = "{'root':'me'}";
   mesh.sendBroadcast(captain);
   Serial.println("Changed Connection");
 }
