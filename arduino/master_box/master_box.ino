@@ -80,8 +80,6 @@ void changedConnectionCallback()
 
 void nodeTimeAdjustedCallback(int32_t offset)
 {
-  String captain = "I am the captain now";
-  mesh.sendBroadcast(captain);
   Serial.println("Node time adjusted");
 }
 
