@@ -61,39 +61,41 @@ WiFiClient wifiClient;
 PubSubClient mqttClient(mqttBroker, 1883, mqttCallback, wifiClient);
 
 uint32_t ready;
-
 bool triggered;
+list<uint32_t> nodelist;
 
+// --------------------------------------------------------- painlessMesh
 void newConnectionCallback(uint32_t nodeId)
 {
-  String captain = "{'root':'me'}";
-  mesh.sendBroadcast(captain);
-  Serial.print("New Connection ");
+  String rootbridge = "{'root':'me'}";
+  mesh.sendBroadcast(rootbridge);
+  Serial.println("New Connection");
+  nodeLifeManager();
 }
 
 void changedConnectionCallback()
 {
-  String captain = "{'root':'me'}";
-  mesh.sendBroadcast(captain);
+  String rootbridge = "{'root':'me'}";
+  mesh.sendBroadcast(rootbridge);
   Serial.println("Changed Connection");
+  nodeLifeManager();
 }
 
 void nodeTimeAdjustedCallback(int32_t offset)
 {
-  Serial.println("Node time adjusted");
 }
 
 void receivedCallback(const uint32_t &from, const String &msg)
 {
   StaticJsonBuffer<400> jsonBuffer;
   JsonObject &root = jsonBuffer.parseObject(msg);
-  
+
   String topic = "/503-bad-box/from/" + String(from) + "/";
   if (root.containsKey("data") && (root.size() == 2))
   {
     JsonObject &data = root["data"];
     String x;
-    String message; 
+    String message;
     String y;
     for (JsonPair &p : root)
     {
@@ -101,16 +103,17 @@ void receivedCallback(const uint32_t &from, const String &msg)
       //p.value     // is a JsonVariant
       if (strcmp(p.key, "data") != 0)
       {
-        topic = topic + p.key + "/" + String(p.value.as<char*>()).c_str();;
+        topic = topic + p.key + "/" + String(p.value.as<char *>()).c_str();
+        ;
       }
     }
     data.printTo(message);
     String sender = String(from);
 
     mqttClient.publish(topic.c_str(), message.c_str());
-  } else {
   }
 }
+// --------------------------------------------------------- painlessMesh
 
 void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
 {
@@ -173,9 +176,68 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   }
 }
 
+void nodeLifeManager()
+{
+  list<uint32_t> newNodeList = mesh.getNodeList();
+  newNodeList.sort();
+
+  for (list<uint32_t>::iterator i = newNodeList.begin(); i != newNodeList.end(); i++)
+  {
+    bool foundit = false;
+    for (list<uint32_t>::iterator j = nodelist.begin(); j != nodelist.end(); j++)
+    {
+      Serial.print(*i, DEC);
+      Serial.print(" ");
+      Serial.println(*j, DEC);
+      if (*i == *j)
+      {
+        foundit = true;
+        //break; // node already existed
+      }
+    }
+    if (foundit == false)
+    {
+      String topic = "/503-bad-box/from/" + String(*i) + "/availability";
+      mqttClient.publish(topic.c_str(), "available");
+    }
+  }
+
+  for (list<uint32_t>::iterator i = nodelist.begin(); i != nodelist.end(); i++)
+  {
+    bool foundit = false;
+    for (list<uint32_t>::iterator j = newNodeList.begin(); j != newNodeList.end(); j++)
+    {
+      Serial.print(*i, DEC);
+      Serial.print(" ");
+      Serial.println(*j, DEC);
+      if (*i == *j)
+      {
+        foundit = true;
+        //break; // node already existed
+      }
+    }
+    if (foundit == false)
+    {
+      String topic = "/503-bad-box/from/" + String(*i) + "/availability";
+      mqttClient.publish(topic.c_str(), "unavailable");
+    }
+  }
+
+  nodelist.empty();
+  nodelist = newNodeList;
+}
+
+void alive()
+{
+  Serial.println("I'm alive");
+}
+
+Scheduler runner;
+Task availabilityRefresh(300000, TASK_FOREVER, &nodeLifeManager);
+Task alivetask(1000, TASK_FOREVER, &alive);
+
 void setup()
 {
-  // put your setup code here, to run once:
   Serial.begin(115200);
   mesh.init(MESH_PREFIX, MESH_PASSWORD, MESH_PORT);
   mesh.onReceive(&receivedCallback);
@@ -186,6 +248,10 @@ void setup()
   mesh.setHostname(HOSTNAME);
   Serial.println("Finish setup");
   ready = millis();
+  runner.init();
+  runner.addTask(availabilityRefresh);
+  runner.addTask(alivetask);
+  alivetask.enable();
 }
 
 void loop()
@@ -202,9 +268,15 @@ void loop()
     {
       mqttClient.subscribe("/503-bad-box/to/#");
       mqttClient.publish("/503-bad-box/from/gateway", "Ready!");
+      availabilityRefresh.enable();
       Serial.println("MQTT connected");
     }
+    else
+    {
+      availabilityRefresh.disable();
+    }
   }
+  runner.execute();
 }
 
 IPAddress getlocalIP()
