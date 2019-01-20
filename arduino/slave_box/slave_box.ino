@@ -1,6 +1,10 @@
 #include "painlessMesh.h"
 #include "ArduinoJson.h"
 #include "NeoPixelBus.h"
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266HTTPUpdateServer.h>
 
 #define MESH_PREFIX "whateverYouLike"
 #define MESH_PASSWORD "somethingSneaky"
@@ -171,6 +175,7 @@ void receivedCallback(uint32_t from, String &msg)
 {
   StaticJsonBuffer<400> jsonBuffer;
   JsonObject &root = jsonBuffer.parseObject(msg);
+  root.prettyPrintTo(Serial);
   /* Array for {"led":"1",
                 "data": {"state": "ON",
                          "brightness": 146,
@@ -210,6 +215,10 @@ void receivedCallback(uint32_t from, String &msg)
     {
       ledstrip[led].SetBrightness(data["brightness"]);
     }
+  }
+  else if (root.containsKey("upgrade"))
+  {
+    upgradeSketch(root["ssid"], root["password"]);
   }
 }
 
@@ -348,6 +357,34 @@ public:
 int pins[] = {16, 5, 4, 0, 2, 14, 12, 13, 15};
 bool latch[] = {0, 1, 0, 0, 0, 0, 0, 0, 0};
 InputManager switches(pins, latch);
+
+void upgradeSketch(String ssid, String password)
+{
+  Serial.println("Upgrading sketch");
+  ESP8266WebServer httpServer(80);
+  ESP8266HTTPUpdateServer httpUpdater;
+  mesh.stop();
+  Serial.println("Mesh disconnected");
+
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.begin(ssid.c_str(), password.c_str());
+
+  while (WiFi.waitForConnectResult() != WL_CONNECTED)
+  {
+    WiFi.begin(ssid.c_str(), password.c_str());
+    Serial.println("WiFi failed, retrying.");
+  }
+
+  httpUpdater.setup(&httpServer);
+  httpServer.begin();
+
+  uint32_t timer = millis();
+  while (timer < millis() - 300000)
+  {
+    httpServer.handleClient();
+  }
+  ESP.restart();
+}
 
 void setup()
 {
