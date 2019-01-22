@@ -4,12 +4,12 @@ MQTT to mesh:
 -------------
 
 MQTT topics to be formatted like this:
-/503-bad-box/to/nodeId/x/y
+/502-bad-box/to/nodeId/x/y
 
 MQTT message MUST be a valid JSON
 
 If topic does not contain x and y
-/503-bad-box/to/nodeID
+/502-bad-box/to/nodeID
 JSON is to be passed without any modification
 
 If topic contains x and y, Json is to be
@@ -28,9 +28,9 @@ Same applies the other way around:
 If incoming JSON contains only 2 nodes,
 one of which is called "data" and contains another
 JSON, it is to be sent to
-/503-bad-box/from/nodeId/x/y
+/502-bad-box/from/nodeId/x/y
 
-Else, only from /503-bad-box/from/nodeId
+Else, only from /502-bad-box/from/nodeId
 
 */
 
@@ -45,7 +45,7 @@ Else, only from /503-bad-box/from/nodeId
 #define STATION_SSID "mosquittotest"
 #define STATION_PASSWORD "mosquittotest"
 
-#define HOSTNAME "503badboxmaster"
+#define HOSTNAME "502badboxmaster"
 
 //Without these it dies idk
 void receivedCallback(const uint32_t &from, const String &msg);
@@ -90,7 +90,7 @@ void receivedCallback(const uint32_t &from, const String &msg)
   StaticJsonBuffer<400> jsonBuffer;
   JsonObject &root = jsonBuffer.parseObject(msg);
 
-  String topic = "/503-bad-box/from/" + String(from) + "/";
+  String topic = "/502-bad-box/from/" + String(from) + "/";
   if (root.containsKey("data") && (root.size() == 2))
   {
     JsonObject &data = root["data"];
@@ -124,14 +124,14 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   String msg = String(cleanPayload);
   free(cleanPayload);
 
-  String Stopic = String(topic).substring(16); // /503-bad-box/to/758607613/1
+  String Stopic = String(topic).substring(16); // /502-bad-box/to/758607613/1
   uint32_t target = strtoul(Stopic.substring(0, 9).c_str(), NULL, 10);
 
   if (Stopic == "gateway")
   {
     if (msg == "getNodes")
     {
-      mqttClient.publish("/503-bad-box/from/gateway", mesh.subConnectionJson().c_str());
+      mqttClient.publish("/502-bad-box/from/gateway", mesh.subConnectionJson().c_str());
     }
   }
   else if (Stopic == "broadcast")
@@ -171,7 +171,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     }
     else
     {
-      mqttClient.publish("/503-bad-box/from/gateway", "Client not connected!");
+      mqttClient.publish("/502-bad-box/from/gateway", "Client not connected!");
     }
   }
 }
@@ -197,7 +197,7 @@ void nodeLifeManager()
     }
     if (foundit == false)
     {
-      String topic = "/503-bad-box/from/" + String(*i) + "/availability";
+      String topic = "/502-bad-box/from/" + String(*i) + "/availability";
       mqttClient.publish(topic.c_str(), "available");
     }
   }
@@ -218,7 +218,7 @@ void nodeLifeManager()
     }
     if (foundit == false)
     {
-      String topic = "/503-bad-box/from/" + String(*i) + "/availability";
+      String topic = "/502-bad-box/from/" + String(*i) + "/availability";
       mqttClient.publish(topic.c_str(), "unavailable");
     }
   }
@@ -264,10 +264,10 @@ void loop()
     myIP = getlocalIP();
     Serial.println("My IP is " + myIP.toString());
 
-    if (mqttClient.connect("503-bad-box-master"))
+    if (mqttClient.connect("502-bad-box-master"))
     {
-      mqttClient.subscribe("/503-bad-box/to/#");
-      mqttClient.publish("/503-bad-box/from/gateway", "Ready!");
+      mqttClient.subscribe("/502-bad-box/to/#");
+      mqttClient.publish("/502-bad-box/from/gateway", "Ready!");
       availabilityRefresh.enable();
       Serial.println("MQTT connected");
     }
