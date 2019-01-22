@@ -3,8 +3,8 @@
 #include "NeoPixelBus.h"
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266HTTPUpdateServer.h>
+#include <ESP8266HTTPClient.h>
+#include <ESP8266httpUpdate.h>
 
 #define MESH_PREFIX "whateverYouLike"
 #define MESH_PASSWORD "somethingSneaky"
@@ -218,7 +218,7 @@ void receivedCallback(uint32_t from, String &msg)
   }
   else if (root.containsKey("upgrade"))
   {
-    upgradeSketch(root["ssid"], root["password"]);
+    upgradeSketch(root["ssid"], root["password"], root["url"]);
   }
 }
 
@@ -358,11 +358,9 @@ int pins[] = {16, 5, 4, 0, 2, 14, 12, 13, 15};
 bool latch[] = {0, 1, 0, 0, 0, 0, 0, 0, 0};
 InputManager switches(pins, latch);
 
-void upgradeSketch(String ssid, String password)
+void upgradeSketch(String ssid, String password, String url)
 {
   Serial.println("Upgrading sketch");
-  ESP8266WebServer httpServer(80);
-  ESP8266HTTPUpdateServer httpUpdater;
   mesh.stop();
   Serial.println("Mesh disconnected");
 
@@ -375,14 +373,7 @@ void upgradeSketch(String ssid, String password)
     Serial.println("WiFi failed, retrying.");
   }
 
-  httpUpdater.setup(&httpServer);
-  httpServer.begin();
-
-  uint32_t timer = millis();
-  while (timer < millis() - 300000)
-  {
-    httpServer.handleClient();
-  }
+  t_httpUpdate_return ret = ESPhttpUpdate.update(url);
   ESP.restart();
 }
 
