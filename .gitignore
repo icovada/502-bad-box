@@ -4,4 +4,4 @@ c_cpp_properties.json
 settings.json
 
 examples/
-.vscode/settings.json
+.vscode/
